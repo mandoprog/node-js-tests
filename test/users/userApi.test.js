@@ -6,32 +6,39 @@ const sinon = require("sinon");
 const app = require('./../../app');
 const userService = require('./../../src/users/userService');
 
-before(() => {
-    const mockedUsers = [
-        {
-            id: 987,
-            name: 'Mandalorian',
-            age: 61,
-            category: 'senior'
-        },
-        {
-            id: 1735,
-            name: 'Luk Skywalker',
-            age: 55,
-            category: 'normal'
-        }
-    ];
+let sandbox;
+let getUsersServiceStub;
+const mockedUsers = [{
+    id: 987,
+    name: 'Mandalorian',
+    age: 61,
+    category: 'senior'
+},
+{
+    id: 1735,
+    name: 'Luk Skywalker',
+    age: 55,
+    category: 'normal'
+}];
 
-    sinon.stub(userService, 'getUsers').resolves(mockedUsers);
-});
 
 describe('User API Response', () => {
 
+    before(() => {
+        sandbox = sinon.createSandbox();
+        getUsersServiceStub = sandbox.stub(userService, 'getUsers');
+    });
+
     it('get users API should pass correctly', async () => {
 
+        // Mock
+        getUsersServiceStub.resolves(mockedUsers);
+
+        // Then
         const res = await request(app).get('/user');
         const responseUsers = res.body;
 
+        // Assert
         expect(res.status).to.deep.equal(200);
         expect(responseUsers[0].id).to.deep.equal(987);
         expect(responseUsers[0].name).to.deep.equal('Mandalorian');
@@ -43,6 +50,20 @@ describe('User API Response', () => {
         expect(responseUsers[1].age).to.deep.equal(55);
         expect(responseUsers[1].category).to.deep.equal('normal');
 
+    });
+
+    it('get users API should return 500 Error', async () => {
+
+        getUsersServiceStub.rejects(new Error('Error Age'));
+
+        const res = await request(app).get('/user');
+        console.log(res.status)
+        expect(res.status).to.deep.equal(500);
+       
+    });
+
+    after(() => {
+        sandbox.restore();
     });
 
 });
